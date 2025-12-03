@@ -1,0 +1,5 @@
+venv/
+vertex-key.json
+.env
+__pycache__/
+harvested_latest.jsonl

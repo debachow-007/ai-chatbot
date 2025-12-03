@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+SQLAlchemy
+psycopg2-binary
+python-dotenv
+pydantic
+pgvector
+trafilatura
+playwright
+beautifulsoup4
+httpx
+google-cloud-aiplatform
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
