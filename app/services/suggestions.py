@@ -20,7 +20,7 @@ Assistant answer:
 
 Detected intent: {intent}
 
-Suggest 3 SHORT follow-up questions that:
+Suggest 3 SHORT follow-up questions from user's point of view that:
 - keep the conversation moving
 - increase chances of the user asking about services or portfolio
 - are friendly and natural

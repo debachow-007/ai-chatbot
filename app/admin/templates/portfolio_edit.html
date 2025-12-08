@@ -1,0 +1,56 @@
+# app/admin/admin_router.py (update)
+
+from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
+from fastapi.responses import RedirectResponse
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
+import shutil
+import uuid
+
+from app.db import SessionLocal
+from app.models import PortfolioItem
+
+admin_router = APIRouter(prefix="/admin", tags=["admin"])
+
+templates = Jinja2Templates(directory="app/admin/templates")
+
+def get_db():
+    db = SessionLocal()
+    try: yield db
+    finally: db.close()
+
+@admin_router.get("/")
+def dashboard(request: Request, db: Session = Depends(get_db)):
+    items = db.query(PortfolioItem).order_by(PortfolioItem.created_at.desc()).limit(10).all()
+    return templates.TemplateResponse("dashboard.html", {"request": request, "projects": items})
+
+@admin_router.get("/portfolio/create")
+def create_page(request: Request):
+    return templates.TemplateResponse("portfolio_create.html", {"request": request})
+
+@admin_router.post("/portfolio/create")
+def create_portfolio(
+    title: str = Form(...),
+    category: str = Form(...),
+    description: str = Form(...),
+    tags: str = Form(""),
+    project_url: str = Form(""),
+    image: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    filename = f"{uuid.uuid4()}_{image.filename}"
+    path = f"app/admin/static/uploads/{filename}"
+    with open(path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+
+    db.add(PortfolioItem(
+        title=title,
+        category=category,
+        description=description,
+        image_url=f"/static/uploads/{filename}",
+        tags=tags.split(","),
+        project_url=project_url
+    ))
+    db.commit()
+
+    return RedirectResponse("/admin", status_code=302)

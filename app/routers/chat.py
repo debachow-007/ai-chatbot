@@ -11,6 +11,7 @@ from app.services.intent import detect_intent
 from app.services.suggestions import generate_suggested_questions
 from app.services.portfolio import semantic_portfolio_search
 from app.services.behavior import decide_behavior
+from app.services.site_links import get_relevant_links_from_chunks
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -64,6 +65,19 @@ def chat(req: ChatRequest, db: Session = Depends(get_db)):
             context=context,
             chat_history=history,
         )
+        # Fetch relevant site links
+        site_links = []
+        try:
+            site_links = get_relevant_links_from_chunks(req.message, db, limit=4)
+        except Exception as e:
+            print("Site links lookup failed:", e)
+
+        # Append formatted link block to reply text
+        if site_links:
+            reply_text += "\n\n**Explore more:**\n"
+            for link in site_links:
+                reply_text += f"- [{link['title']}]({link['url']})\n"
+
     except Exception as e:
         print("Generate_answer error:", e)
         reply_text = "I'm having trouble answering right now. Could you rephrase that?"

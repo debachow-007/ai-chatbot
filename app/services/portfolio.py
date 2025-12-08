@@ -5,12 +5,19 @@ from sqlalchemy import text as sa_text
 from app.services.embeddings import get_query_embedding
 
 
+STOPWORDS = {"show", "me", "give", "tell", "about", "some", "example", "examples", "please", "project", "projects"}
+
+
 def _keyword_fallback_search(query: str, db: Session, limit: int) -> List[Dict[str, Any]]:
-    words = [w.strip() for w in query.lower().split() if w.strip()]
+    print("\n🔁 Entering fuzzy keyword fallback search")
+
+    words = [w.strip() for w in query.lower().split() if w.strip() and w not in STOPWORDS]
     if not words:
+        print("⚠ No valid keywords extracted.")
         return []
 
-    patterns = [f"%{w}%" for w in words]
+    cleaned_query = " ".join(words)
+    print(f"🧠 Cleaned query: {cleaned_query}")
 
     sql = """
         SELECT
@@ -18,25 +25,28 @@ def _keyword_fallback_search(query: str, db: Session, limit: int) -> List[Dict[s
             title,
             description,
             category,
-            project_url
+            project_url,
+            (
+                0.6 * similarity(LOWER(title), :q) +
+                0.3 * similarity(LOWER(description), :q) +
+                0.1 * similarity(LOWER(category), :q)
+            ) AS score
         FROM portfolio_items
         WHERE
-            (
-                LOWER(title) ILIKE ANY(:patterns)
-                OR LOWER(description) ILIKE ANY(:patterns)
-                OR LOWER(category) ILIKE ANY(:patterns)
-                OR EXISTS (
-                    SELECT 1 FROM unnest(tags) t
-                    WHERE LOWER(t) ILIKE ANY(:patterns)
-                )
-            )
+            similarity(LOWER(title), :q) > 0.1
+            OR similarity(LOWER(description), :q) > 0.1
+            OR similarity(LOWER(category), :q) > 0.1
+        ORDER BY score DESC
         LIMIT :limit
     """
 
-    rows = db.execute(
-        sa_text(sql),
-        {"patterns": patterns, "limit": limit},
-    ).fetchall()
+    try:
+        rows = db.execute(sa_text(sql), {"q": cleaned_query, "limit": limit}).fetchall()
+        print(f"📦 Fuzzy returned {len(rows)} rows")
+    except Exception as e:
+        print("❌ Fallback fuzzy query failed:", e)
+        db.rollback()
+        return []
 
     return [
         {
@@ -50,16 +60,19 @@ def _keyword_fallback_search(query: str, db: Session, limit: int) -> List[Dict[s
     ]
 
 
-def semantic_portfolio_search(query: str, db: Session, limit: int = 6) -> List[Dict[str, Any]]:
-    print("Running semantic portfolio search")
+def semantic_portfolio_search(query: str, db: Session, limit: int = 3) -> List[Dict[str, Any]]:
+    print("\n🔍 Running semantic portfolio search")
+
     try:
+        print(f"📝 Query text: {query}")
         embedding_list = get_query_embedding(query)
+
         if not embedding_list:
-            raise ValueError("Empty embedding")
+            raise ValueError("❌ Embedding unavailable")
 
         embedding_str = "[" + ",".join(map(str, embedding_list)) + "]"
+        print(f"📏 Embedding vector prepared (length {len(embedding_list)})")
 
-        # hybrid score: semantic + fuzzy + category
         sql = """
             SELECT
                 image_url,
@@ -79,6 +92,7 @@ def semantic_portfolio_search(query: str, db: Session, limit: int = 6) -> List[D
             LIMIT :limit
         """
 
+        print("📨 Executing semantic search SQL...")
         rows = db.execute(
             sa_text(sql),
             {"embedding": embedding_str, "query": query.lower(), "limit": limit},
@@ -95,19 +109,15 @@ def semantic_portfolio_search(query: str, db: Session, limit: int = 6) -> List[D
             for r in rows
         ]
 
+        print(f"📦 Semantic search returned {len(projects)} projects")
+
         if projects:
             return projects
 
-        print("ℹNo semantic matches, falling back to keyword search.")
+        print("ℹ No semantic results → switching to fuzzy fallback")
 
     except Exception as e:
-        print("Semantic search error → switching to keyword fallback:", e)
+        print("❌ Semantic search error:", e)
         db.rollback()
 
-    print("Fallback to keyword search")
-    try:
-        return _keyword_fallback_search(query, db, limit)
-    except Exception as e:
-        print("Fallback search failed:", e)
-        db.rollback()
-        return []
+    return _keyword_fallback_search(query, db, limit)

@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="flex justify-between items-center mb-6">
+  <h1 class="text-2xl font-bold">Sitemap Pages</h1>
+  <a href="/admin/sitemap/rebuild" class="px-4 py-2 bg-blue-600 text-white rounded-md">Rebuild Sitemap</a>
+</div>
+
+<div class="overflow-x-auto bg-white shadow-md rounded-lg">
+  <table class="min-w-full border border-gray-200">
+    <thead class="bg-gray-100 border-b">
+      <tr>
+        <th class="py-3 px-4 text-left">URL</th>
+        <th class="py-3 px-4 text-left">Title</th>
+        <th class="py-3 px-4 text-left">Chunk</th>
+        <th class="py-3 px-4 text-center">Embedded</th>
+        <th class="py-3 px-4 text-center">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in chunks %}
+      <tr class="border-b hover:bg-gray-50">
+        <td class="py-3 px-4">{{ d.url }}</td>
+        <td class="py-3 px-4">{{ d.title }}</td>
+        <td class="py-3 px-4">{{ d.chunk_index }}</td>
+        <td class="py-3 px-4 text-center">
+          {% if d.embedding.any %}
+            <span class="px-3 py-1 bg-green-600 text-white rounded-full text-sm">YES</span>
+          {% else %}
+            <span class="px-3 py-1 bg-red-600 text-white rounded-full text-sm">NO</span>
+          {% endif %}
+        </td>
+
+        <td class="py-3 px-4 text-center flex gap-2 justify-center">
+          <a href="/admin/sitemap/view/{{ d.id }}" class="text-blue-600 font-medium hover:underline">View</a>
+          <a href="/admin/sitemap/delete/{{ d.id }}" class="text-red-600 font-medium hover:underline"
+             onclick="return confirm('Delete this record?')">Delete</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

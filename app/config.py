@@ -22,10 +22,22 @@ class Settings(BaseSettings):
     # CORS
     FRONTEND_ORIGIN: str = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
 
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "secret")
+    ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
+
+    ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "admin")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "admin123")
+
+    AWS_KEY: str = os.getenv("AWS_KEY", "")
+    AWS_SECRET: str = os.getenv("AWS_SECRET", "")
+    AWS_BUCKET: str = os.getenv("AWS_BUCKET", "")
+    AWS_REGION: str = os.getenv("AWS_REGION", "ap-south-1")
+
     # Service account path
-    GOOGLE_APPLICATION_CREDENTIALS: str = os.getenv(
-        "GOOGLE_APPLICATION_CREDENTIALS", "vertex-key.json"
-    )
+    GOOGLE_APPLICATION_CREDENTIALS: str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if not GOOGLE_APPLICATION_CREDENTIALS:
+        raise RuntimeError("GOOGLE_APPLICATION_CREDENTIALS environment variable is required.")
+
 
 
 settings = Settings()

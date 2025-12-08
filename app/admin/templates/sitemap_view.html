@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="mb-6">
+  <h1 class="text-2xl font-bold">View Page Details</h1>
+</div>
+
+<div class="bg-white shadow-md p-6 rounded-lg space-y-4">
+  <div>
+    <label class="font-semibold block">URL:</label>
+    <p class="text-gray-800">{{ doc.url }}</p>
+  </div>
+
+  <div>
+    <label class="font-semibold block">Title:</label>
+    <p class="text-gray-800">{{ doc.title }}</p>
+  </div>
+
+  <div>
+    <label class="font-semibold block">Content:</label>
+    <pre class="text-sm bg-gray-100 p-4 rounded-md whitespace-pre-wrap">
+{{ doc.content }}
+    </pre>
+  </div>
+
+  <div>
+    <label class="font-semibold block">Embedding Status:</label>
+    {% if doc.embedding %}
+      <span class="px-3 py-1 bg-green-600 text-white rounded-full text-sm">YES</span>
+    {% else %}
+      <span class="px-3 py-1 bg-red-600 text-white rounded-full text-sm">NO</span>
+    {% endif %}
+  </div>
+
+  <div class="flex gap-3">
+    <a href="/admin/sitemap/regenerate/{{ doc.id }}"
+       class="px-4 py-2 bg-blue-600 text-white rounded-md">Regenerate Embedding</a>
+
+    <a href="/admin/sitemap"
+       class="px-4 py-2 bg-gray-600 text-white rounded-md">Back</a>
+  </div>
+</div>
+
+{% endblock %}

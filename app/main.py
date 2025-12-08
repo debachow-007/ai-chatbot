@@ -1,9 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.db import Base, engine
 from app.routers import chat
+from app.admin.admin_router import admin_router
+from app.admin.auth_router import auth_router
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -19,6 +22,10 @@ app.add_middleware(
 )
 
 app.include_router(chat.router)
+app.include_router(auth_router)
+app.include_router(admin_router)
+
+app.mount("/static", StaticFiles(directory="app/admin/static"), name="static")
 
 
 @app.get("/health")

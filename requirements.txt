@@ -4,6 +4,7 @@ SQLAlchemy
 psycopg2-binary
 python-dotenv
 pydantic
+pydantic-settings
 pgvector
 trafilatura
 playwright
@@ -13,3 +14,5 @@ google-cloud-aiplatform
 google-auth
 google-auth-oauthlib
 google-auth-httplib2
+boto3
+aioboto3
