@@ -9,15 +9,15 @@ STOPWORDS = {"show", "me", "give", "tell", "about", "some", "example", "examples
 
 
 def _keyword_fallback_search(query: str, db: Session, limit: int) -> List[Dict[str, Any]]:
-    print("\n🔁 Entering fuzzy keyword fallback search")
+    print("\nEntering fuzzy keyword fallback search")
 
     words = [w.strip() for w in query.lower().split() if w.strip() and w not in STOPWORDS]
     if not words:
-        print("⚠ No valid keywords extracted.")
+        print("No valid keywords extracted.")
         return []
 
     cleaned_query = " ".join(words)
-    print(f"🧠 Cleaned query: {cleaned_query}")
+    print(f"Cleaned query: {cleaned_query}")
 
     sql = """
         SELECT
@@ -42,9 +42,9 @@ def _keyword_fallback_search(query: str, db: Session, limit: int) -> List[Dict[s
 
     try:
         rows = db.execute(sa_text(sql), {"q": cleaned_query, "limit": limit}).fetchall()
-        print(f"📦 Fuzzy returned {len(rows)} rows")
+        print(f"Fuzzy returned {len(rows)} rows")
     except Exception as e:
-        print("❌ Fallback fuzzy query failed:", e)
+        print("Fallback fuzzy query failed:", e)
         db.rollback()
         return []
 
@@ -61,17 +61,17 @@ def _keyword_fallback_search(query: str, db: Session, limit: int) -> List[Dict[s
 
 
 def semantic_portfolio_search(query: str, db: Session, limit: int = 3) -> List[Dict[str, Any]]:
-    print("\n🔍 Running semantic portfolio search")
+    print("\nRunning semantic portfolio search")
 
     try:
-        print(f"📝 Query text: {query}")
+        print(f"Query text: {query}")
         embedding_list = get_query_embedding(query)
 
         if not embedding_list:
-            raise ValueError("❌ Embedding unavailable")
+            raise ValueError("Embedding unavailable")
 
         embedding_str = "[" + ",".join(map(str, embedding_list)) + "]"
-        print(f"📏 Embedding vector prepared (length {len(embedding_list)})")
+        print(f"Embedding vector prepared (length {len(embedding_list)})")
 
         sql = """
             SELECT
@@ -92,7 +92,7 @@ def semantic_portfolio_search(query: str, db: Session, limit: int = 3) -> List[D
             LIMIT :limit
         """
 
-        print("📨 Executing semantic search SQL...")
+        print("Executing semantic search SQL...")
         rows = db.execute(
             sa_text(sql),
             {"embedding": embedding_str, "query": query.lower(), "limit": limit},
@@ -109,15 +109,15 @@ def semantic_portfolio_search(query: str, db: Session, limit: int = 3) -> List[D
             for r in rows
         ]
 
-        print(f"📦 Semantic search returned {len(projects)} projects")
+        print(f"Semantic search returned {len(projects)} projects")
 
         if projects:
             return projects
 
-        print("ℹ No semantic results → switching to fuzzy fallback")
+        print("No semantic results → switching to fuzzy fallback")
 
     except Exception as e:
-        print("❌ Semantic search error:", e)
+        print("Semantic search error:", e)
         db.rollback()
 
     return _keyword_fallback_search(query, db, limit)

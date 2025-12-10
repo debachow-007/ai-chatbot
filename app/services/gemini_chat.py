@@ -1,6 +1,9 @@
 import vertexai
 from vertexai.generative_models import GenerativeModel
 
+# from app.db import db
+# from app.services.suggestions import get_relevant_links_from_chunks
+
 from app.config import settings
 
 vertexai.init(
@@ -25,6 +28,8 @@ def generate_answer(
         history_text += f"{speaker}: {m['content']}\n"
 
     intent_str = f"\nDetected intent: {intent}" if intent else ""
+    # site_links = []
+    # site_links = get_relevant_links_from_chunks(user_message, db, limit=4)
 
     prompt = f"""
 You are Vibes AI — a senior digital consultant at Vibes Communications.
@@ -33,14 +38,16 @@ marketing, and technology solutions, and guide them to take action.
 
 Write answers that:
 - are short, concise, 2–4 paragraphs max
+- be quirky and fun
 - use bullet points whenever possible
 - highlight outcomes and benefits, not features
 - avoid generic filler text
 - feel confident and expert
-- end with ONE follow-up question to continue conversation
+- end with ONE follow-up question to continue conversation which should be after the link in a new line given some space
 - if unclear intent: ask a clarifying question
+- add relevant links from sitemap and wrap it in relevant text
 
-NEVER respond with more than 1200 characters.
+NEVER respond with more than 300 characters.
 NEVER produce generic marketing fluff.
 
 Use this context from the website when relevant:
@@ -50,6 +57,7 @@ Conversation so far:
 {history_text}
 User: {user_message}
 {intent_str}
+
 """
 
     try:
@@ -58,6 +66,5 @@ User: {user_message}
     except Exception as e:
         print("Gemini chat error:", e)
         return (
-            "I'm facing a small technical hiccup right now 😅 "
-            "but I can still help if you rephrase or narrow down your question."
+            "I'm facing a small technical hiccup right now 😅 but I can still help if you rephrase or narrow down your question."
         )

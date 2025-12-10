@@ -12,6 +12,8 @@ from app.services.suggestions import generate_suggested_questions
 from app.services.portfolio import semantic_portfolio_search
 from app.services.behavior import decide_behavior
 from app.services.site_links import get_relevant_links_from_chunks
+from app.services.knowledge_base import kb_exact_match, kb_semantic_match
+
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -50,6 +52,22 @@ def chat(req: ChatRequest, db: Session = Depends(get_db)):
     # Build history
     history = build_chat_history(session)
 
+    kb_answer = kb_exact_match(req.message, db)
+
+    if not kb_answer:
+        kb_answer = kb_semantic_match(req.message, db)
+
+    if kb_answer:
+        return ChatResponse(
+            session_id=session.id,
+            reply=kb_answer,
+            intent="knowledge_base",
+            response_type="text",
+            suggested_questions=[],
+            images=[],
+            projects=[],
+        )
+
     # Knowledge RAG
     chunks = search_relevant_chunks(req.message, top_k=5, db=db)
     context = build_context(chunks) if chunks else ""
@@ -65,18 +83,18 @@ def chat(req: ChatRequest, db: Session = Depends(get_db)):
             context=context,
             chat_history=history,
         )
-        # Fetch relevant site links
-        site_links = []
-        try:
-            site_links = get_relevant_links_from_chunks(req.message, db, limit=4)
-        except Exception as e:
-            print("Site links lookup failed:", e)
+        # # Fetch relevant site links
+        # site_links = []
+        # try:
+        #     site_links = get_relevant_links_from_chunks(req.message, db, limit=4)
+        # except Exception as e:
+        #     print("Site links lookup failed:", e)
 
-        # Append formatted link block to reply text
-        if site_links:
-            reply_text += "\n\n**Explore more:**\n"
-            for link in site_links:
-                reply_text += f"- [{link['title']}]({link['url']})\n"
+        # # Append formatted link block to reply text
+        # if site_links:
+        #     reply_text += "\n\n**Explore more:**\n"
+        #     for link in site_links:
+        #         reply_text += f"- [{link['title']}]({link['url']})\n"
 
     except Exception as e:
         print("Generate_answer error:", e)
@@ -101,7 +119,13 @@ def chat(req: ChatRequest, db: Session = Depends(get_db)):
     has_projects = len(projects) > 0
 
     # Decide frontend rendering mode
-    response_type = "portfolio" if intent == "portfolio" and has_projects else decide_behavior(intent, has_projects)
+    if intent == "confused":
+        response_type = "cta"
+    elif intent == "portfolio" and has_projects:
+        response_type = "portfolio"
+    else:
+        response_type = decide_behavior(intent, has_projects)
+
 
     # Suggested question generation
     suggested_questions = generate_suggested_questions(

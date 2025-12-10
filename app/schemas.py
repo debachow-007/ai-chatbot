@@ -24,3 +24,16 @@ class ChatResponse(BaseModel):
     response_type: str = "text"
     intent: str = "other"
     projects: List[PortfolioProject] = []
+
+class KnowledgeBaseItem(BaseModel):
+    id: UUID
+    question: str
+    answer: str
+
+    class Config:
+        orm_mode = True
+
+
+class KnowledgeBaseCreate(BaseModel):
+    question: str
+    answer: str

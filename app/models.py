@@ -69,3 +69,12 @@ class PortfolioItem(Base):
     tags = Column(ARRAY(Text))   # ['website', 'branding', 'fashion', ...]
     embedding = Column(Vector(768), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class KnowledgeBase(Base):
+    __tablename__ = "knowledge_base"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    question = Column(Text, nullable=False)     # canonical question
+    answer = Column(Text, nullable=False)       # official truth
+    embedding = Column(Vector(768), nullable=True)  # optional semantic search
+    created_at = Column(DateTime, default=datetime.utcnow)
